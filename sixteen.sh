@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ "$#" -lt 6 ]; then
-    echo "Usage: $0 <STOCK_DEVICE> <USE_UI_8_TETHERING_APEX> <TARGET_DEVICE> <TARGET_DEVICE_CSC> <TARGET_DEVICE_IMEI> <OUTPUT_FILESYSTEM>"
+if [ "$#" -lt 4 ]; then
+    echo "Usage: $0 <STOCK_DEVICE> <USE_UI_8_TETHERING_APEX> <TARGET_DEVICE> <OUTPUT_FILESYSTEM>"
     exit 1
 fi
 
@@ -11,9 +11,7 @@ VERSION="1"
 export STOCK_DEVICE="$1"
 export USE_UI_8_TETHERING_APEX="$2"
 export TARGET_DEVICE="$3"
-export TARGET_DEVICE_CSC="$4"
-export TARGET_DEVICE_IMEI="$5"
-export OUTPUT_FILESYSTEM="$6"
+export OUTPUT_FILESYSTEM="$4"
 
 # Directories
 export FIRM_DIR="$(pwd)/FW"
@@ -36,23 +34,21 @@ if [ "$STOCK_DEVICE" != "None" ]; then
     fi
 fi
 
-
 if [ ! -f "$(pwd)/QuantumROM/Devices/${STOCK_DEVICE}.zip" ]; then
     if curl -fsSL --connect-timeout 5 https://www.google.com >/dev/null; then
         wget --no-check-certificate \
             "https://github.com/SN-Abdullah-Al-Noman/QuantumROM/releases/download/QuantumROM_Devices/${STOCK_DEVICE}.zip" \
             -O "$(pwd)/QuantumROM/Devices/${STOCK_DEVICE}.zip"
     else
-	    rm -rf "$(pwd)/QuantumROM/Devices/${STOCK_DEVICE}.zip"
+        rm -rf "$(pwd)/QuantumROM/Devices/${STOCK_DEVICE}.zip"
         echo "- No internet connection available. Unable to download: ${STOCK_DEVICE}.zip"
-        return 1
+        exit 1
     fi
 fi
 
-
 if [ -f "${DEVICES_DIR}/${STOCK_DEVICE}.zip" ]; then
     rm -rf "${DEVICES_DIR}/${STOCK_DEVICE}"
-	mkdir "${DEVICES_DIR}/${STOCK_DEVICE}"
+    mkdir "${DEVICES_DIR}/${STOCK_DEVICE}"
     unzip -oq "${DEVICES_DIR}/${STOCK_DEVICE}.zip" -d "${DEVICES_DIR}/${STOCK_DEVICE}"
 fi
 
@@ -60,7 +56,29 @@ fi
 source "$(pwd)/scripts/debloat.sh"
 source "$(pwd)/scripts/QuantumRom.sh"
 
-#EXTRACT_FIRMWARE "$FIRM_DIR/$TARGET_DEVICE"
+# Auto-detect CSC from extracted firmware
+TARGET_DEVICE_CSC=""
+if [ -d "$FIRM_DIR/$TARGET_DEVICE" ]; then
+    # Try to find CSC from OMC folder
+    if [ -d "$FIRM_DIR/$TARGET_DEVICE/omc" ]; then
+        TARGET_DEVICE_CSC=$(ls "$FIRM_DIR/$TARGET_DEVICE/omc" | grep -E '^[A-Z]{3}$' | head -n 1)
+    elif [ -d "$FIRM_DIR/$TARGET_DEVICE/system/omc" ]; then
+        TARGET_DEVICE_CSC=$(ls "$FIRM_DIR/$TARGET_DEVICE/system/omc" | grep -E '^[A-Z]{3}$' | head -n 1)
+    elif [ -f "$FIRM_DIR/$TARGET_DEVICE/system/build.prop" ]; then
+        TARGET_DEVICE_CSC=$(grep 'ro.csc.country_code=' "$FIRM_DIR/$TARGET_DEVICE/system/build.prop" | cut -d= -f2 | tr -d '\r')
+    fi
+fi
+
+if [ -z "$TARGET_DEVICE_CSC" ]; then
+    echo "⚠️  Warning: Could not auto-detect CSC, using default 'BKD'"
+    TARGET_DEVICE_CSC="BKD"
+fi
+
+echo "📱 Target Device: $TARGET_DEVICE"
+echo "🌍 Detected CSC: $TARGET_DEVICE_CSC"
+echo "📦 Output Filesystem: $OUTPUT_FILESYSTEM"
+
+EXTRACT_FIRMWARE "$FIRM_DIR/$TARGET_DEVICE"
 EXTRACT_SUPER_IMG "$FIRM_DIR/$TARGET_DEVICE"
 EXTRACT_FIRMWARE_IMG "$FIRM_DIR/$TARGET_DEVICE" "all"
 
