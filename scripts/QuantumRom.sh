@@ -170,10 +170,10 @@ DOWNLOAD_DIRECT_FIRMWARE() {
     echo -e "======================================"
     echo -e "URL: $DIRECT_URL"
 
-    cd "$DOWN_DIR"
+    cd "$DOWN_DIR" || return 1
     
     # Download with wget
-  	wget --no-check-certificate --progress=bar:force -O firmware.tar.md5 "$DIRECT_URL"
+    wget --no-check-certificate --progress=bar:force -O firmware.bin "$DIRECT_URL"
     
     if [ $? -ne 0 ]; then
         echo -e "⛔️ Download failed from URL: $DIRECT_URL"
@@ -181,17 +181,29 @@ DOWNLOAD_DIRECT_FIRMWARE() {
         return 1
     fi
     
-    # Extract the zip
-    echo -e "Extracting firmware.zip..."
-    unzip -o firmware.zip
+    echo -e "📦 Extracting firmware..."
     
-    if [ $? -ne 0 ]; then
-        echo -e "⛔️ Failed to extract firmware.zip"
-        cd ..
-        return 1
+    # Try to detect file type and extract
+    FILE_TYPE=$(file -b firmware.bin)
+    
+    if echo "$FILE_TYPE" | grep -q "tar"; then
+        echo -e "Detected tar archive..."
+        mv firmware.bin firmware.tar
+        tar -xf firmware.tar 2>/dev/null
+        rm -f firmware.tar
+    elif echo "$FILE_TYPE" | grep -q "Zip"; then
+        echo -e "Detected zip archive..."
+        mv firmware.bin firmware.zip
+        unzip -oq firmware.zip
+        rm -f firmware.zip
+    else
+        echo -e "⚠️  Unknown file type: $FILE_TYPE"
+        echo -e "Attempting to extract as tar..."
+        mv firmware.bin firmware.tar
+        tar -xf firmware.tar 2>/dev/null || true
+        rm -f firmware.tar
     fi
     
-    rm -f firmware.zip
     cd ..
     
     echo -e "✅ Direct download and extraction complete."
