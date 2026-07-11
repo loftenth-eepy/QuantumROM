@@ -151,58 +151,56 @@ DETECT_FILESYSTEM() {
 }
 
 
-DOWNLOAD_FIRMWARE() {
+DOWNLOAD_DIRECT_FIRMWARE() {
     echo " "
 
-    if [ "$#" -lt 4 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY> [VERSION]"
+    if [ "$#" -lt 2 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <DIRECT_URL> <DOWNLOAD_DIRECTORY>"
         return 1
     fi
 
-    local MODEL="$1"
-    local CSC="$2"
-    local IMEI="$3"
-    local DOWN_DIR="${4}/$MODEL"
+    local DIRECT_URL="$1"
+    local DOWN_DIR="$2"
 
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
 
     echo -e "======================================"
-    echo -e "  Samsung FW Downloader   "
+    echo -e "  Direct Firmware Downloader   "
     echo -e "======================================"
-    echo -e "MODEL: $MODEL | CSC: $CSC"
+    echo -e "URL: $DIRECT_URL"
 
-    VERSION=$(python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" checkupdate 2>&1)
-
-    if [ $? -ne 0 ] || [ -z "$VERSION" ]; then
-        echo -e "⛔️ MODEL/CSC/IMEI not valid or no update found."
-        echo -e "Error: $VERSION"
+    cd "$DOWN_DIR"
+    
+    # Download with wget
+    wget --no-check-certificate -O firmware.zip "$DIRECT_URL"
+    
+    if [ $? -ne 0 ]; then
+        echo -e "⛔️ Download failed from URL: $DIRECT_URL"
+        cd ..
         return 1
     fi
-
-    if [ -n "$GITHUB_ENV" ]; then
-        echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-    fi
-
-    # --- Step 2: Download Firmware ---
-    python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -O "$DOWN_DIR"
+    
+    # Extract the zip
+    echo -e "Extracting firmware.zip..."
+    unzip -o firmware.zip
+    
     if [ $? -ne 0 ]; then
-        echo -e "⛔️ Download failed. Check IMEI/MODEL/CSC."
-        exit 1
+        echo -e "⛔️ Failed to extract firmware.zip"
+        cd ..
+        return 1
     fi
-
-	find "$DOWN_DIR" -type f -name "*.zip.enc*" -delete
-
-    # --- Show Firmware Info ---
-    local file_size=$(du -m "${DOWN_DIR}"/${MODEL}_*_fac.zip 2>/dev/null | cut -f1)
-    echo -e "Firmware Size: ${file_size} MB"
+    
+    rm -f firmware.zip
+    cd ..
+    
+    echo -e "✅ Direct download and extraction complete."
 }
-
 
 EXTRACT_FIRMWARE() {
     echo " "
 
-    if [ "$#" -ne 1 ]; then
+    if [ "$#" -lt 1 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
     fi
@@ -211,9 +209,9 @@ EXTRACT_FIRMWARE() {
 
     echo -e "Extracting downloaded firmware."
 
-	if [ ! -d "$FIRM_DIR" ]; then
+    if [ ! -d "$FIRM_DIR" ]; then
         echo -e "- Directory not found: $FIRM_DIR"
-        exit
+        exit 1
     fi
 
     # ---- ZIP ----
@@ -230,7 +228,7 @@ EXTRACT_FIRMWARE() {
     rm -f "$FIRM_DIR"/BL_*.tar.md5
     rm -f "$FIRM_DIR"/CP_*.tar.md5
     rm -f "$FIRM_DIR"/HOME_CSC_*.tar.md5
-	rm -f "$FIRM_DIR"/USERDATA_*.tar.md5
+    rm -f "$FIRM_DIR"/USERDATA_*.tar.md5
 
     # ---- XZ ----
     for file in "$FIRM_DIR"/*.xz; do
@@ -318,6 +316,27 @@ EXTRACT_FIRMWARE() {
     echo -e "Firmware Extraction complete."
 }
 
+AUTO_DETECT_CSC() {
+    local FIRM_DIR="$1"
+    local TARGET_DEVICE="$2"
+    
+    local CSC=""
+    
+    # Try to find CSC from OMC folder
+    if [ -d "$FIRM_DIR/$TARGET_DEVICE/omc" ]; then
+        CSC=$(ls "$FIRM_DIR/$TARGET_DEVICE/omc" | grep -E '^[A-Z]{3}$' | head -n 1)
+    elif [ -d "$FIRM_DIR/$TARGET_DEVICE/system/omc" ]; then
+        CSC=$(ls "$FIRM_DIR/$TARGET_DEVICE/system/omc" | grep -E '^[A-Z]{3}$' | head -n 1)
+    elif [ -f "$FIRM_DIR/$TARGET_DEVICE/system/build.prop" ]; then
+        CSC=$(grep 'ro.csc.country_code=' "$FIRM_DIR/$TARGET_DEVICE/system/build.prop" | cut -d= -f2 | tr -d '\r')
+    fi
+    
+    if [ -z "$CSC" ]; then
+        CSC="BKD"
+    fi
+    
+    echo "$CSC"
+}
 
 EXTRACT_SUPER_IMG() {
     echo " "
