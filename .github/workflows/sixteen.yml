@@ -77,7 +77,8 @@ jobs:
           fi
           
           echo "Extracting firmware..."
-             tar -xf firmware.tar.md5
+              mv firmware.tar.md5 firmware.tar
+             tar -xf firmware.tar
             rm -f firmware.tar.md5
           cd ..
 
