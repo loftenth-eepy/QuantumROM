@@ -6,11 +6,11 @@ on:
       STOCK_DEVICE:
         description: "STOCK_DEVICE_MODEL or None"
         required: true
-        default: "SM-A225F"
+        default: "SM-A226B"
       USE_UI_8_TETHERING_APEX:
         description: "Set True if your kernel BPF version is 5.4 (lower than 5.10)."
         required: true
-        default: "False"
+        default: "true"
       OUTPUT_FILESYSTEM:
         description: "OUTPUT_FILESYSTEM. e.g erofs / ext4 / f2fs"
         required: true
@@ -20,7 +20,7 @@ on:
         required: true
         default: "False"
       DIRECT_DOWNLOAD_URL:
-        description: "Direct download URL for firmware (e.g., https://s01.ooo/v2/firmware.zip)"
+        description: "Direct download URL for firmware (e.g., https://s01.ooo/v2/"
         required: true
         default: ""
 
@@ -85,7 +85,7 @@ jobs:
         run: |
           source scripts/QuantumRom.sh
           # Auto-detect device from extracted files
-          DEVICE_FOLDER=$(ls FW | grep -E '^SM-[A-Z0-9]+$' | head -n 1)
+          DEVICE_FOLDER=$(ls FW | grep -E '^AP-[A-Z0-9]+$' | head -n 1)
           if [ -z "$DEVICE_FOLDER" ]; then
             echo "❌ No device folder found in FW directory!"
             exit 1
