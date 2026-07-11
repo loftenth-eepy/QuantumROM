@@ -77,8 +77,8 @@ jobs:
           fi
           
           echo "Extracting firmware..."
-           tar -xf "$file"
-          rm -f "$file"
+             tar -xf firmware.tar.md5
+            rm -f firmware.tar.md5
           cd ..
 
       - name: Extract firmware
