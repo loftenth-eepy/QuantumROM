@@ -78,28 +78,11 @@ jobs:
           
              echo "Extracting firmware from zip..."
              unzip -q firmware.zip
-    
-            # Extract the tar.md5 file if it exists
-            TAR_MD5_FILE=$(ls *.tar.md5 2>/dev/null | head -n 1)
-            if [ -z "$TAR_MD5_FILE" ]; then
-              echo "❌ No .tar.md5 file found in zip!"
-              exit 1
-            fi
-    
-          echo "Found firmware: $TAR_MD5_FILE"
-          tar -xf "$TAR_MD5_FILE"
-          rm -f "$TAR_MD5_FILE" firmware.zip
           cd ..
 
       - name: Extract firmware
         run: |
           source scripts/QuantumRom.sh
-          # Auto-detect device from extracted files
-          DEVICE_FOLDER=$(ls FW | grep -E '^AP-[A-Z0-9]+$' | head -n 1)
-          if [ -z "$DEVICE_FOLDER" ]; then
-            echo "❌ No device folder found in FW directory!"
-            exit 1
-          fi
           echo "Found device: $DEVICE_FOLDER"
           EXTRACT_FIRMWARE "FW/$DEVICE_FOLDER"
 
