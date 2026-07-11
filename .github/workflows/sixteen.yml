@@ -80,12 +80,6 @@ jobs:
              unzip -q firmware.zip
           cd ..
 
-      - name: Extract firmware
-        run: |
-          source scripts/QuantumRom.sh
-          echo "Found device: $DEVICE_FOLDER"
-          EXTRACT_FIRMWARE "FW/$DEVICE_FOLDER"
-
       - name: Start Rom Build
         run: |
           # Auto-detect device from extracted files
