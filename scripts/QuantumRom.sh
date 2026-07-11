@@ -173,7 +173,7 @@ DOWNLOAD_DIRECT_FIRMWARE() {
     cd "$DOWN_DIR"
     
     # Download with wget
-    wget --no-check-certificate -O firmware.zip "$DIRECT_URL"
+  	wget --no-check-certificate --progress=bar:force -O firmware.tar.md5 "$DIRECT_URL"
     
     if [ $? -ne 0 ]; then
         echo -e "⛔️ Download failed from URL: $DIRECT_URL"
