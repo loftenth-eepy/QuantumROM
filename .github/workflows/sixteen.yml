@@ -70,7 +70,7 @@ jobs:
           
           echo "Downloading firmware from: $DIRECT_URL"
           cd FW
-          wget --no-check-certificate -O firmware.tar.md5 "$DIRECT_URL"          
+          wget --no-check-certificate -O firmware.zip "$DIRECT_URL"          
           if [ $? -ne 0 ]; then
             echo "❌ Failed to download firmware!"
             exit 1
