@@ -47,10 +47,7 @@ jobs:
                  exit 1
               fi
           fi
-
-      - name: Remove unnecessary files.
-        uses: rokibhasansagar/slimhub_actions@v25.42.5
-
+          
       - name: Install Dependencies.
         run: |
           sudo apt update
