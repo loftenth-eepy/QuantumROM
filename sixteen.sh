@@ -30,7 +30,6 @@ if [ "$STOCK_DEVICE" != "None" ]; then
         echo "$STOCK_DEVICE is supported"
     else
         echo "❌ $STOCK_DEVICE is not supported by this tool."
-        exit 1
     fi
 fi
 
