@@ -34,18 +34,6 @@ if [ "$STOCK_DEVICE" != "None" ]; then
     fi
 fi
 
-if [ ! -f "$(pwd)/QuantumROM/Devices/${STOCK_DEVICE}.zip" ]; then
-    if curl -fsSL --connect-timeout 5 https://www.google.com >/dev/null; then
-        wget --no-check-certificate \
-            "https://github.com/SN-Abdullah-Al-Noman/QuantumROM/releases/download/QuantumROM_Devices/${STOCK_DEVICE}.zip" \
-            -O "$(pwd)/QuantumROM/Devices/${STOCK_DEVICE}.zip"
-    else
-        rm -rf "$(pwd)/QuantumROM/Devices/${STOCK_DEVICE}.zip"
-        echo "- No internet connection available. Unable to download: ${STOCK_DEVICE}.zip"
-        exit 1
-    fi
-fi
-
 if [ -f "${DEVICES_DIR}/${STOCK_DEVICE}.zip" ]; then
     rm -rf "${DEVICES_DIR}/${STOCK_DEVICE}"
     mkdir "${DEVICES_DIR}/${STOCK_DEVICE}"
